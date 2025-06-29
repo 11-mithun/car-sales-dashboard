@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automobile Visualization Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #1a1a1a, #333333);
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 3em;
+            color: #FFD700;
+            text-align: center;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+        nav {
+            background-color: #333;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+        }
+        .card {
+            background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px;
+            width: 30%;
+            box-shadow: 0 10px 20px rgba(0, 255, 0, 0.5);
+            transition: transform 0.3s, box-shadow 0.3s;
+            transform-style: preserve-3d;
+        }
+        .card:hover {
+            transform: scale(1.05) rotateY(5deg);
+            box-shadow: 0 20px 40px rgba(255, 255, 0, 0.8);
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #FFA500;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        button {
+            background-color: #FFD700;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        button:hover {
+            background-color: #FFC107;
+            transform: translateY(-2px);
+        }
+        #map {
+            height: 400px;
+        }
+        .download-button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+        .download-button:hover {
+            background-color: #45a049;
+        }
+        main {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            transform-style: preserve-3d;
+        }
+        .chat-container {
+            margin-top: 20px;
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            transform: rotateY(0deg);
+        }
+        .chat-box {
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #222;
+            border-radius: 5px;
+        }
+        .input-container {
+            display: flex;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            margin-right: 10px;
+        }
+        .input-container button {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+        }
+        .input-container button:hover {
+            background-color: #45a049;
+        }
+        @media (max-width: 768px) {
+            .card {
+                width: 100%;
+            }
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="#" style="color: white; text-decoration: none; padding: 10px;">Home</a></li>
+            <li><a href="#" style="color: white; text-decoration: none; padding: 10px;">Features</a></li>
+            <li><a href="#" style="color: white; text-decoration: none; padding: 10px;">About</a></li>
+            <li><a href="#" style="color: white; text-decoration: none; padding: 10px;">Contact</a></li>
+        </ul>
+    </nav>
+    <header>
+        <h1 class="title">Automobile Visualization Dashboard</h1>
+        <input type="file" id="fileUpload" accept=".csv" style="margin-bottom: 10px;">
+        <button id="uploadButton">Upload</button>
+    </header>
+
+    <main>
+        <div class="card" id="salesProfitCard">
+            <h2>Sales Profit</h2>
+            <canvas id="salesProfitChart"></canvas>
+        </div>
+        <div class="card" id="monthlySalesCard">
+            <h2>Monthly Sales Profit</h2>
+            <canvas id="monthlySalesChart"></canvas>
+        </div>
+        <div class="card" id="typeCard">
+            <h2>Type Distribution</h2>
+            <canvas id="typeChart"></canvas>
+        </div>
+        <div class="card" id="ageDistributionCard">
+            <h2>Customer Age Distribution</h2>
+            <canvas id="ageDistributionChart"></canvas>
+        </div>
+        <div class="card" id="salesChannelCard">
+            <h2>Sales Channel Distribution</h2>
+            <canvas id="salesChannelChart"></canvas>
+        </div>
+        <div class="card" id="genderCard">
+            <h2>Gender Distribution</h2>
+            <canvas id="genderChart"></canvas>
+        </div>
+        <div class="card" id="incomeCard">
+            <h2>Income Distribution</h2>
+            <canvas id="incomeChart"></canvas>
+        </div>
+        <div class="card" id="colorCard">
+            <h2>Vehicle Color Distribution</h2>
+            <canvas id="colorChart"></canvas>
+        </div>
+        <div class="card" id="maintenanceCard">
+            <h2>Maintenance Predictions</h2>
+            <canvas id="maintenanceChart"></canvas>
+            <div id="maintenanceList"></div>
+        </div>
+        <div id="3dChart" style="width: 100%; height: 400px;"></div>
+    </main>
+
+    <div id="map"></div>
+
+    <footer style="text-align: center; margin-top: 20px;">
+        <button id="downloadButton" class="download-button">Download Visualizations</button>
+    </footer>
+
+    <!-- Chatbot Section -->
+    <div class="chat-container">
+        <h2>Chatbot</h2>
+        <div class="chat-box" id="chatBox"></div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask me anything..." />
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', handleFileUpload);
+        document.getElementById('downloadButton').addEventListener('click', downloadVisualizations);
+        document.getElementById('sendButton').addEventListener('click', handleChat);
+
+        let charts = {};
+
+        async function handleFileUpload() {
+            const fileInput = document.getElementById('fileUpload');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                alert("File upload failed.");
+                return;
+            }
+
+            const data = await response.json();
+            renderCharts(data);
+            initMap(data);
+            renderMaintenancePredictions(data.maintenance_predictions); 
+            render3DChart(data.x, data.y, data.z);
+        }
+
+        function renderMaintenancePredictions(predictions) {
+            const maintenanceList = document.getElementById('maintenanceList');
+            const maintenanceCtx = document.getElementById('maintenanceChart').getContext('2d');
+            
+            const maintenanceData = Object.values(predictions);
+            const vehicleIds = Object.keys(predictions);
+            
+            maintenanceList.innerHTML = ''; // Clear previous content
+
+            if (maintenanceData.length === 0) {
+                maintenanceList.innerHTML = '<p>No maintenance needed.</p>';
+            } else {
+                for (const [vehicleId, message] of Object.entries(predictions)) {
+                    const listItem = document.createElement('div');
+                    listItem.textContent = `${vehicleId}: ${message}`;
+                    maintenanceList.appendChild(listItem);
+                }
+                
+                // Create maintenance chart
+                charts.maintenanceChart = new Chart(maintenanceCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: vehicleIds,
+                        datasets: [{
+                            label: 'Maintenance Predictions',
+                            data: maintenanceData,
+                            backgroundColor: '#FF9800',
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderCharts(data) {
+            const salesProfitCtx = document.getElementById('salesProfitChart').getContext('2d');
+            charts.salesProfitChart = new Chart(salesProfitCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sales Profit', 'Remaining'],
+                    datasets: [{
+                        data: [data.sales_profit, 10000 - data.sales_profit],
+                        backgroundColor: ['#4caf50', '#f44336'],
+                        hoverOffset: 4,
+                    }]
+                }
+            });
+
+            const monthlySalesCtx = document.getElementById('monthlySalesChart').getContext('2d');
+            charts.monthlySalesChart = new Chart(monthlySalesCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(data.monthly_sales),
+                    datasets: [{
+                        label: 'Monthly Sales Profit',
+                        data: Object.values(data.monthly_sales),
+                        borderColor: '#2196F3',
+                        fill: false,
+                    }]
+                }
+            });
+
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            charts.typeChart = new Chart(typeCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data.type_counts),
+                    datasets: [{
+                        label: 'Vehicle Types Sold',
+                        data: Object.values(data.type_counts),
+                        backgroundColor: '#FF9800',
+                    }]
+                }
+            });
+
+            const ageDistributionCtx = document.getElementById('ageDistributionChart').getContext('2d');
+            charts.ageDistributionChart = new Chart(ageDistributionCtx, {
+                type: 'radar',
+                data: {
+                    labels: Object.keys(data.age_distribution),
+                    datasets: [{
+                        label: 'Customer Age Distribution',
+                        data: Object.values(data.age_distribution),
+                        backgroundColor: 'rgba(63, 81, 181, 0.5)',
+                    }]
+                }
+            });
+
+            const salesChannelCtx = document.getElementById('salesChannelChart').getContext('2d');
+            charts.salesChannelChart = new Chart(salesChannelCtx, {
+                type: 'polarArea',
+                data: {
+                    labels: Object.keys(data.sales_channel_counts),
+                    datasets: [{
+                        label: 'Sales Channels',
+                        data: Object.values(data.sales_channel_counts),
+                        backgroundColor: ['#FF5722', '#FFC107'],
+                    }]
+                }
+            });
+
+            const genderCtx = document.getElementById('genderChart').getContext('2d');
+            charts.genderChart = new Chart(genderCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.gender_distribution),
+                    datasets: [{
+                        data: Object.values(data.gender_distribution),
+                        backgroundColor: ['#4caf50', '#f44336'],
+                    }]
+                }
+            });
+
+            const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+            charts.incomeChart = new Chart(incomeCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Min Income', 'Max Income', 'Mean Income'],
+                    datasets: [{
+                        label: 'Income Distribution',
+                        data: [data.income_distribution.min, data.income_distribution.max, data.income_distribution.mean],
+                        backgroundColor: '#2196F3',
+                    }]
+                }
+            });
+
+            const colorCtx = document.getElementById('colorChart').getContext('2d');
+            charts.colorChart = new Chart(colorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data.color_distribution),
+                    datasets: [{
+                        data: Object.values(data.color_distribution),
+                        backgroundColor: ['#FF9800', '#4caf50', '#f44336', '#2196F3', '#FFC107'],
+                    }]
+                }
+            });
+        }
+
+        function initMap(data) {
+            var map = L.map('map').setView([13.067439, 80.237617], 10);
+
+            // Use a different tile layer for better aesthetics
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: ' OpenStreetMap'
+            }).addTo(map);
+
+            // Custom markers
+            var markers = [];
+            for (var area in data.locations) {
+                var loc = data.locations[area];
+                var marker = L.marker([loc.lat, loc.lng], {
+                    icon: L.icon({
+                        iconUrl: 'path/to/custom-icon.png', // Replace with your custom icon path
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+                markers.push(marker);
+                marker.bindPopup(loc.details);
+            }
+        }
+
+        function render3DChart(x, y, z) {
+            var trace = {
+                x: x,
+                y: y,
+                z: z,
+                mode: 'markers',
+                marker: {
+                    size: 12,
+                    color: 'rgba(255, 0, 0, .8)',
+                    line: {color: 'rgba(0, 0, 0, .5)', width: 0.5}
+                },
+                type: 'scatter3d'
+            };
+
+            var layout = {
+                title: '3D Scatter Plot',
+                scene: {
+                    xaxis: {title: 'Sales Profit'},
+                    yaxis: {title: 'Customer Age'},
+                    zaxis: {title: 'Customer Income'}
+                }
+            };
+
+            Plotly.newPlot('3dChart', [trace], layout);
+        }
+
+        function downloadVisualizations() {
+            for (const chartKey in charts) {
+                const chart = charts[chartKey];
+                const link = document.createElement('a');
+                link.href = chart.toBase64Image();
+                link.download = `${chartKey}.png`;
+                link.click();
+            }
+        }
+
+        function handleChat() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += `<div><strong>You:</strong> ${message}</div>`;
+            userInput.value = '';
+
+            const response = getChatbotResponse(message);
+            chatBox.innerHTML += `<div><strong>Bot:</strong> ${response}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+        }
+
+        function getChatbotResponse(message) {
+            const responses = {
+                "What is the sales profit?": "The sales profit is the difference between sales revenue and the cost of goods sold.",
+                "Tell me about monthly sales.": "Monthly sales refer to the total sales revenue generated in a month.",
+                "What are the vehicle types sold?": "The vehicle types sold include sedan, SUV, truck, etc.",
+                "Show me the customer age distribution.": "The customer age distribution shows the age range of customers purchasing vehicles.",
+                "What are the sales channels?": "Sales channels include online, dealership, and direct sales.",
+                "Tell me about gender distribution.": "The gender distribution shows the percentage of male and female customers.",
+                "What is the income distribution?": "Income distribution provides insights into the income levels of customers.",
+                "Show me the vehicle color distribution.": "The vehicle color distribution shows the popularity of different vehicle colors.",
+                "How do I download the visualizations?": "You can click the 'Download Visualizations' button at the bottom.",
+                "What is this dashboard about?": "This dashboard provides visual insights into automobile sales data."
+            };
+
+            return responses[message] || "I'm sorry, I don't understand that.";
+        }
+    </script>
+</body>
+</html>
